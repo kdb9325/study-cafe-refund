@@ -1,8 +1,8 @@
 # 앤딩 스터디카페 환불 계산기
 
 ## 배포
-- Streamlit Cloud URL: (배포 링크 기입)
-- GitHub 저장소: (저장소 URL 기입)
+- Streamlit Cloud URL: https://muinlab-refund.streamlit.app/
+- GitHub 저장소: https://github.com/kdb9325/study-cafe-refund
 
 ## 프로젝트 맥락
 - 무인화연구소 환불 시스템
