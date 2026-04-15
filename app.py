@@ -19,12 +19,33 @@ st.set_page_config(
     layout="centered",
 )
 
-# ─── 모바일 최적화 CSS ────────────────────────────────────────────────────────
+# ─── 모바일 최적화 CSS (다크 테마) ──────────────────────────────────────────
 st.markdown("""
 <style>
-/* 전체 폰트 크기 및 여백 */
-html, body, [class*="css"] {
+/* 전체 배경 검정 + 글자 흰색 */
+html, body, [class*="css"],
+.stApp, section[data-testid="stSidebar"],
+div[data-testid="stAppViewContainer"],
+div[data-testid="stHeader"] {
+    background-color: #111111 !important;
+    color: #ffffff !important;
     font-size: 16px;
+}
+
+/* 메인 콘텐츠 배경 */
+div[data-testid="stMainBlockContainer"],
+div[data-testid="block-container"] {
+    background-color: #111111 !important;
+}
+
+/* 제목/텍스트 흰색 */
+h1, h2, h3, h4, h5, h6, p, span, label, div {
+    color: #ffffff !important;
+}
+
+/* 캡션 및 보조 텍스트 */
+.stCaption, small {
+    color: #aaaaaa !important;
 }
 
 /* 버튼 및 selectbox 터치 영역 확대 */
@@ -32,24 +53,39 @@ div[data-testid="stSelectbox"] > div,
 div[data-testid="stNumberInput"] > div > div > input {
     font-size: 16px !important;
     min-height: 48px;
+    background-color: #222222 !important;
+    color: #ffffff !important;
+    border-color: #444444 !important;
+}
+
+/* selectbox 드롭다운 */
+div[data-baseweb="select"] > div {
+    background-color: #222222 !important;
+    color: #ffffff !important;
 }
 
 /* 메트릭 카드 스타일 */
 div[data-testid="stMetric"] {
-    background-color: #f8f9fa;
+    background-color: #1e1e1e !important;
     border-radius: 12px;
     padding: 12px 16px;
     margin-bottom: 8px;
+    border: 1px solid #333333;
 }
 
 div[data-testid="stMetric"] label {
     font-size: 13px !important;
-    color: #666;
+    color: #aaaaaa !important;
 }
 
 div[data-testid="stMetric"] [data-testid="stMetricValue"] {
     font-size: 22px !important;
     font-weight: 700;
+    color: #ffffff !important;
+}
+
+div[data-testid="stMetricDelta"] {
+    color: #ff6b6b !important;
 }
 
 /* 결과 박스 */
@@ -64,6 +100,19 @@ div[data-testid="stAlert"] {
 button[data-baseweb="tab"] {
     font-size: 14px !important;
     padding: 10px 8px !important;
+    color: #aaaaaa !important;
+    background-color: #111111 !important;
+}
+
+button[data-baseweb="tab"][aria-selected="true"] {
+    color: #ffffff !important;
+    border-bottom-color: #ffffff !important;
+}
+
+/* number input 배경 */
+input[type="number"] {
+    background-color: #222222 !important;
+    color: #ffffff !important;
 }
 
 /* 슬라이더 */
@@ -71,9 +120,22 @@ div[data-testid="stSlider"] {
     padding: 8px 0;
 }
 
-/* 구분선 여백 */
+/* 구분선 */
 hr {
     margin: 16px 0;
+    border-color: #333333 !important;
+}
+
+/* expander */
+details {
+    background-color: #1e1e1e !important;
+    border: 1px solid #333333 !important;
+    border-radius: 8px;
+}
+
+/* 프로그레스 바 */
+div[data-testid="stProgressBar"] > div {
+    background-color: #333333 !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -126,6 +188,14 @@ with tab_period:
 
         result = calculate_refund("기간권", product_name, int(usage_days))
         week_num = result.get("주차", (int(usage_days) - 1) // 7 + 1)
+        remaining_days = total_days - int(usage_days)
+
+        # 실시간 사용량
+        st.markdown("**사용량**")
+        st.progress(int(usage_days) / total_days, text=f"{int(usage_days)}일 사용 / 총 {total_days}일")
+        col_used, col_remain = st.columns(2)
+        col_used.metric("사용일수", f"{int(usage_days)}일")
+        col_remain.metric("잔여일수", f"{remaining_days}일")
 
         st.divider()
 
@@ -180,6 +250,16 @@ with tab_time:
         "시간권", time_product, int(usage_hours), days_since_purchase=int(days_since)
     )
     deduction = int(usage_hours) * HOURLY_DEDUCTION
+    total_hours = price // HOURLY_DEDUCTION
+    remaining_hours = max(total_hours - int(usage_hours), 0)
+
+    # 실시간 사용량
+    st.markdown("**사용량**")
+    progress_val = min(int(usage_hours) / total_hours, 1.0) if total_hours > 0 else 0.0
+    st.progress(progress_val, text=f"{int(usage_hours)}시간 사용 / 총 {total_hours}시간")
+    col_used, col_remain = st.columns(2)
+    col_used.metric("사용시간", f"{int(usage_hours)}h")
+    col_remain.metric("잔여시간", f"{remaining_hours}h")
 
     st.divider()
 
@@ -238,6 +318,13 @@ with tab_extended:
             f"{icon} {i + 1}분기 ({q_start_w}~{q_end_w}주)",
             label,
         )
+
+    # 실시간 사용량
+    st.markdown("**사용량**")
+    st.progress(int(ext_usage) / max_ext_days, text=f"{int(ext_usage)}일 사용 / 총 {max_ext_days}일")
+    col_used, col_remain = st.columns(2)
+    col_used.metric("사용일수", f"{int(ext_usage)}일")
+    col_remain.metric("잔여일수", f"{max_ext_days - int(ext_usage)}일")
 
     st.divider()
 
